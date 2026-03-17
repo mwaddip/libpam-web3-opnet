@@ -36,6 +36,35 @@ struct OPNetSig {
     machine_id: String,
 }
 
+/// Info response for plugin discovery.
+#[derive(serde::Serialize)]
+struct PluginInfoResponse {
+    chain: &'static str,
+    address_pattern: &'static str,
+    signing_url: String,
+}
+
+const DEFAULT_SIGNING_URL: &str = "https://localhost:8443";
+const SIGNING_URL_CONFIG: &str = "/etc/web3-auth/config.toml";
+
+fn read_signing_url() -> String {
+    if let Ok(content) = std::fs::read_to_string(SIGNING_URL_CONFIG) {
+        let mut port = 8443u16;
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if let Some(val) = trimmed.strip_prefix("port") {
+                if let Some(val) = val.trim().strip_prefix('=') {
+                    if let Ok(p) = val.trim().parse::<u16>() {
+                        port = p;
+                    }
+                }
+            }
+        }
+        return format!("https://localhost:{}", port);
+    }
+    DEFAULT_SIGNING_URL.to_string()
+}
+
 fn main() {
     let mut input = String::new();
     if let Err(e) = std::io::stdin().read_to_string(&mut input) {
@@ -43,6 +72,21 @@ fn main() {
         process::exit(1);
     }
 
+    // Check if this is an info request
+    if let Ok(obj) = serde_json::from_str::<serde_json::Value>(&input) {
+        if obj.get("command").and_then(|v| v.as_str()) == Some("info") {
+            let info = PluginInfoResponse {
+                chain: "opnet",
+                // OPNet uses Bitcoin-style addresses
+                address_pattern: "^(bc1|tb1|bcrt1)[a-z0-9]+$",
+                signing_url: read_signing_url(),
+            };
+            print!("{}", serde_json::to_string(&info).unwrap());
+            process::exit(0);
+        }
+    }
+
+    // Otherwise treat as a verify request
     let parsed: PluginInput = match serde_json::from_str(&input) {
         Ok(p) => p,
         Err(e) => {
