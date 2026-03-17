@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OPNet Auth</title>
+<style>
+:root {
+  --primary: #F97900;
+  --primary-dark: color-mix(in srgb, var(--primary) 80%, black);
+  --bg: #0a0a0a;
+  --surface: #1a1a1a;
+  --text: #e0e0e0;
+  --text-muted: #888;
+  --border: #333;
+  --success: #22c55e;
+  --error: #ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.c{max-width:480px;width:100%;background:var(--surface);border-radius:12px;padding:24px;box-shadow:0 4px 24px rgba(0,0,0,.5)}
+h1{font-size:1.25rem;margin-bottom:16px;color:#fff}
+label{display:block;margin-bottom:6px;font-size:.875rem;color:var(--text-muted)}
+input{width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:#fff;font-size:1rem;margin-bottom:16px;font-family:inherit}
+input:focus{outline:none;border-color:var(--primary)}
+button{width:100%;padding:12px;border:none;border-radius:8px;font-size:1rem;cursor:pointer;transition:background .2s;background:var(--primary);color:#fff}
+button:hover:not(:disabled):not(.disabled){background:var(--primary-dark)}
+button:disabled,button.disabled{opacity:.5;cursor:not-allowed}
+button.loading{opacity:.7}
+
+/* Status message */
+#status-message{text-align:center;padding:8px;margin-bottom:16px;border-radius:6px;font-size:.875rem}
+#status-message.error{background:#7f1d1d;color:#fca5a5}
+#status-message.success{background:#14532d;color:#86efac}
+
+/* Step containers */
+.hidden{display:none}
+#step-connect.completed{display:none}
+#step-sign:not(.active){display:none}
+
+/* Wallet address display */
+.wallet{font-size:.75rem;color:#666;margin-bottom:16px;word-break:break-all}
+.info{font-size:.75rem;color:var(--text-muted);margin-bottom:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="c">
+<h1>OPNet Authentication</h1>
+<div id="status-message" class="hidden"></div>
+
+<div id="step-connect" class="active">
+<p class="info">Sign in to your server using your OPWallet. Connect your wallet to get started.</p>
+<button id="btn-connect">Connect OPWallet</button>
+</div>
+
+<div id="step-sign" class="hidden">
+<div id="wallet-address" class="wallet"></div>
+
+<label for="code">OTP Code</label>
+<input type="text" id="code" readonly autocomplete="off">
+<label for="machine">Machine ID</label>
+<input type="text" id="machine" readonly autocomplete="off">
+<button id="btn-sign">Sign Message</button>
+</div>
+</div>
+
+<script src="engine.js"></script>
+</body>
+</html>

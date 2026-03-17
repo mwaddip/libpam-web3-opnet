@@ -41,28 +41,6 @@ struct OPNetSig {
 struct PluginInfoResponse {
     chain: &'static str,
     address_pattern: &'static str,
-    signing_url: String,
-}
-
-const DEFAULT_SIGNING_URL: &str = "https://localhost:8443";
-const SIGNING_URL_CONFIG: &str = "/etc/web3-auth/config.toml";
-
-fn read_signing_url() -> String {
-    if let Ok(content) = std::fs::read_to_string(SIGNING_URL_CONFIG) {
-        let mut port = 8443u16;
-        for line in content.lines() {
-            let trimmed = line.trim();
-            if let Some(val) = trimmed.strip_prefix("port") {
-                if let Some(val) = val.trim().strip_prefix('=') {
-                    if let Ok(p) = val.trim().parse::<u16>() {
-                        port = p;
-                    }
-                }
-            }
-        }
-        return format!("https://localhost:{}", port);
-    }
-    DEFAULT_SIGNING_URL.to_string()
 }
 
 fn main() {
@@ -77,9 +55,8 @@ fn main() {
         if obj.get("command").and_then(|v| v.as_str()) == Some("info") {
             let info = PluginInfoResponse {
                 chain: "opnet",
-                // OPNet uses Bitcoin-style addresses
-                address_pattern: "^(bc1|tb1|bcrt1)[a-z0-9]+$",
-                signing_url: read_signing_url(),
+                // OPNet: 0x + hex(SHA256(ML-DSA public key))
+                address_pattern: "^0x[0-9a-f]{64}$",
             };
             print!("{}", serde_json::to_string(&info).unwrap());
             process::exit(0);
