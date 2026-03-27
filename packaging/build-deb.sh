@@ -98,7 +98,8 @@ Version: ${VERSION}
 Section: admin
 Priority: optional
 Architecture: ${ARCH}
-Depends: libpam-web3, nodejs (>= 22)
+Depends: libpam-web3
+Recommends: nodejs (>= 22)
 Maintainer: libpam-web3 maintainers
 Homepage: https://github.com/mwaddip/libpam-web3-opnet
 Description: OPNet authentication plugin for libpam-web3
