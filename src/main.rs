@@ -6,9 +6,13 @@
 //!
 //! # Protocol
 //!
-//! stdin:  {"sig": {chain, wallet_address, otp, machine_id}, "otp_message": "..."}
-//! stdout: wallet address (on success)
-//! exit:   0 = verified, 1 = denied
+//! Discovery: install-time manifest at /usr/lib/libpam-web3/plugins/opnet.json,
+//! written by postinst. PAM no longer queries the binary at startup.
+//!
+//! Verify:
+//!   stdin:  {"sig": {chain, wallet_address, otp, machine_id}, "otp_message": "..."}
+//!   stdout: wallet address (on success)
+//!   exit:   0 = verified, 1 = denied
 //!
 //! # Trust Model
 //!
@@ -36,13 +40,6 @@ struct OPNetSig {
     machine_id: String,
 }
 
-/// Info response for plugin discovery.
-#[derive(serde::Serialize)]
-struct PluginInfoResponse {
-    chain: &'static str,
-    address_pattern: &'static str,
-}
-
 fn main() {
     let mut input = String::new();
     if let Err(e) = std::io::stdin().read_to_string(&mut input) {
@@ -50,20 +47,6 @@ fn main() {
         process::exit(1);
     }
 
-    // Check if this is an info request
-    if let Ok(obj) = serde_json::from_str::<serde_json::Value>(&input) {
-        if obj.get("command").and_then(|v| v.as_str()) == Some("info") {
-            let info = PluginInfoResponse {
-                chain: "opnet",
-                // OPNet: 0x + hex(SHA256(ML-DSA public key))
-                address_pattern: "^0x[0-9a-f]{64}$",
-            };
-            print!("{}", serde_json::to_string(&info).unwrap());
-            process::exit(0);
-        }
-    }
-
-    // Otherwise treat as a verify request
     let parsed: PluginInput = match serde_json::from_str(&input) {
         Ok(p) => p,
         Err(e) => {

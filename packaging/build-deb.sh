@@ -68,6 +68,15 @@ mkdir -p "$PKG_DIR/usr/share/doc/${PKG_NAME}"
 # Copy plugin binary
 cp "$PROJECT_DIR/target/x86_64-unknown-linux-gnu/release/opnet" "$PKG_DIR/usr/lib/libpam-web3/plugins/"
 
+# Plugin discovery manifest — PAM reads this at startup instead of forking
+# the binary to ask `info`. Filename stem must equal the `chain` field.
+cat > "$PKG_DIR/usr/lib/libpam-web3/plugins/opnet.json" << 'MANIFEST'
+{
+  "chain": "opnet",
+  "address_pattern": "^0x[0-9a-f]{64}$"
+}
+MANIFEST
+
 # Copy bundled auth-svc
 cp "$PROJECT_DIR/auth-svc.js" "$PKG_DIR/usr/share/blockhost/auth-svc/opnet/"
 
