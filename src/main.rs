@@ -29,6 +29,8 @@ use std::process;
 struct PluginInput {
     sig: OPNetSig,
     otp_message: String,
+    /// The GECOS wallet address PAM expects this user to authenticate as.
+    wallet_address: String,
 }
 
 #[derive(Deserialize)]
@@ -56,10 +58,7 @@ fn main() {
     };
 
     match verify(&parsed) {
-        Ok(address) => {
-            print!("{}", address);
-            process::exit(0);
-        }
+        Ok(()) => process::exit(0),
         Err(e) => {
             eprintln!("{}", e);
             process::exit(1);
@@ -67,12 +66,16 @@ fn main() {
     }
 }
 
-fn verify(input: &PluginInput) -> Result<String, String> {
+fn verify(input: &PluginInput) -> Result<(), String> {
     if input.sig.wallet_address.is_empty() {
-        return Err("empty wallet_address".to_string());
+        return Err("empty wallet_address in sig".to_string());
+    }
+    if input.wallet_address.is_empty() {
+        return Err("missing GECOS wallet_address".to_string());
     }
 
-    // Verify OTP message matches expected format
+    // Verify OTP message matches expected format. The auth-svc has already
+    // verified the ML-DSA signature; this is defense-in-depth on the OTP.
     let expected_message = format!(
         "Authenticate to {} with code: {}",
         input.sig.machine_id, input.sig.otp
@@ -81,5 +84,15 @@ fn verify(input: &PluginInput) -> Result<String, String> {
         return Err("otp_message mismatch".to_string());
     }
 
-    Ok(input.sig.wallet_address.clone())
+    // Compare the auth-svc-derived address (0x + lowercase hex by
+    // construction) against the GECOS expected value. Case-sensitive
+    // equality is correct for OPNet — addresses are canonical lowercase.
+    if input.sig.wallet_address != input.wallet_address {
+        return Err(format!(
+            "auth-svc-derived address {} does not match GECOS {}",
+            input.sig.wallet_address, input.wallet_address
+        ));
+    }
+
+    Ok(())
 }
