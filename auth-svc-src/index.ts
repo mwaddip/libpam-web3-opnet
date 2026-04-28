@@ -241,7 +241,10 @@ function verifyAndWriteSig(sessionId: string, payload: CallbackPayload): string 
   const session = loadSession(sessionId);
   if (!session) return "session not found or malformed";
 
-  if (!timingSafeEqual(Buffer.from(payload.otp), Buffer.from(session.otp))) return "otp mismatch";
+  const otpA = Buffer.from(payload.otp);
+  const otpB = Buffer.from(session.otp);
+  if (otpA.length !== otpB.length) return "otp mismatch";
+  if (!timingSafeEqual(otpA, otpB)) return "otp mismatch";
   if (payload.machineId !== session.machine_id) return "machine_id mismatch";
 
   // Reconstruct signed message and double-hash per OPWallet convention:
